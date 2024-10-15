@@ -1,0 +1,192 @@
+
+license grace-period
+
+hostname LEAF-02
+install feature-set fabric
+
+feature-set fabric
+
+feature fabric forwarding
+nv overlay evpn
+feature bgp
+feature pim
+feature fabric multicast
+feature interface-vlan
+feature vn-segment-vlan-based
+feature nv overlay
+
+fabric forwarding anycast-gateway-mac AABB.CCDD.0001
+fabric forwarding switch-role spine
+ip pim rp-address 5.5.5.5 group-list 224.0.0.0/4
+ip pim ssm range none
+no ip igmp snooping
+vlan 1,5-6,10,20,33,44,400
+vlan 5
+  vn-segment 50000
+vlan 6
+  vn-segment 60000
+vlan 10
+  vn-segment 51000
+vlan 20
+  vn-segment 52000
+vlan 33
+  vn-segment 63300
+vlan 44
+  vn-segment 54400
+vlan 400
+  vn-segment 640000
+
+route-map LAB permit 100
+route-map LOOPBACK permit 100
+  set ip next-hop 4.4.4.4 
+vrf context LABX
+  vni 50000
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+vrf context LABY
+  vni 60000
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+
+interface Vlan5
+  no shutdown
+  no autostate
+  vrf member LABX
+  ip forward
+
+interface Vlan6
+  no shutdown
+  no autostate
+  vrf member LABY
+  ip forward
+
+interface Vlan10
+  no shutdown
+  vrf member LABX
+  ip forward
+
+interface Vlan20
+  no shutdown
+  vrf member LABX
+  ip address 10.20.20.1/24 tag 20
+  ip proxy-arp
+  ip local-proxy-arp
+  fabric forwarding mode anycast-gateway
+
+interface Vlan33
+  no shutdown
+  vrf member LABY
+  ip address 10.33.33.1/24 tag 33
+
+interface Vlan44
+  no shutdown
+  vrf member LABX
+  ip address 10.44.44.1/24 tag 44
+
+interface Vlan400
+  no shutdown
+  vrf member LABY
+  ip address 10.40.40.1/24 tag 400
+
+interface nve1
+  no shutdown
+  source-interface loopback0
+  host-reachability protocol bgp
+  member vni 50000 associate-vrf
+  member vni 51000 mcast-group 239.1.1.10
+  member vni 52000 mcast-group 239.1.1.20
+  member vni 60000 associate-vrf
+
+interface Ethernet2/1
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef4
+  ip address 192.168.14.2/30
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet2/2
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef4
+  ip address 192.168.24.2/30
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet2/3
+  switchport
+  switchport access vlan 10
+  no shutdown
+
+interface Ethernet2/4
+  switchport
+  switchport access vlan 20
+  no shutdown
+
+interface Ethernet2/5
+  switchport
+  switchport access vlan 33
+  no shutdown
+
+interface Ethernet2/6
+  switchport
+  switchport access vlan 44
+  no shutdown
+
+interface Ethernet2/7
+  switchport
+  switchport access vlan 400
+  no shutdown
+
+interface loopback0
+  ip address 4.4.4.4/32
+  ip pim sparse-mode
+cli alias name wr copy run start
+
+router bgp 65102
+  router-id 4.4.4.4
+  address-family ipv4 unicast
+    network 4.4.4.4/32
+    network 192.168.14.0/30
+    network 192.168.24.0/30
+  neighbor 192.168.14.1 remote-as 65101
+    address-family ipv4 unicast
+      allowas-in
+      send-community both
+    address-family l2vpn evpn
+      allowas-in
+      send-community both
+      route-map LOOPBACK out
+  neighbor 192.168.24.1 remote-as 65101
+    address-family ipv4 unicast
+      allowas-in
+      send-community both
+    address-family l2vpn evpn
+      allowas-in
+      send-community both
+      route-map LOOPBACK out
+  vrf LABX
+    address-family ipv4 unicast
+      advertise l2vpn evpn
+      redistribute direct route-map LAB
+      maximum-paths 2
+  vrf LABY
+    address-family ipv4 unicast
+      advertise l2vpn evpn
+      redistribute direct route-map LAB
+      maximum-paths 2
+evpn
+  vni 51000 l2
+    rd auto
+    route-target import auto
+    route-target export auto
+  vni 52000 l2
+    rd auto
+    route-target import auto
+    route-target export auto
+  
+
