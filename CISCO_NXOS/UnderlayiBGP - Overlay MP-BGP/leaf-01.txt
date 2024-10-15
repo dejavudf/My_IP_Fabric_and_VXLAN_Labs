@@ -1,0 +1,180 @@
+
+hostname LEAF-01
+
+nv overlay evpn
+feature bgp
+feature pim
+feature fabric forwarding
+feature interface-vlan
+feature vn-segment-vlan-based
+feature nv overlay
+
+fabric forwarding anycast-gateway-mac aabb.ccdd.0001
+ip pim rp-address 5.5.5.5 group-list 224.0.0.0/4
+ip pim ssm range 232.0.0.0/8
+vlan 1,5-6,10,20,30,40,300
+vlan 5
+  vn-segment 50000
+vlan 6
+  vn-segment 60000
+vlan 10
+  vn-segment 51000
+vlan 20
+  vn-segment 52000
+vlan 30
+  vn-segment 63000
+vlan 40
+  vn-segment 54000
+vlan 300
+  vn-segment 630000
+
+route-map LAB permit 100
+route-map LOOPBACK permit 100
+  set ip next-hop 3.3.3.3
+vrf context LABX
+  vni 50000
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+vrf context LABY
+  vni 60000
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+
+interface Vlan5
+  no shutdown
+  no autostate
+  vrf member LABX
+  ip forward
+
+interface Vlan6
+  no shutdown
+  no autostate
+  vrf member LABY
+  ip forward
+
+interface Vlan10
+  no shutdown
+  vrf member LABX
+  ip forward
+
+interface Vlan20
+  no shutdown
+  vrf member LABX
+  ip address 10.20.20.1/24 tag 20
+  ip proxy-arp
+  ip local-proxy-arp
+  fabric forwarding mode anycast-gateway
+
+interface Vlan30
+  no shutdown
+  vrf member LABY
+  ip address 10.13.13.1/24 tag 30
+
+interface Vlan40
+  no shutdown
+  vrf member LABX
+  ip address 10.14.14.1/24 tag 40
+
+interface Vlan300
+  no shutdown
+  vrf member LABY
+  ip address 10.30.30.1/24 tag 30
+
+interface nve1
+  no shutdown
+  host-reachability protocol bgp
+  source-interface loopback0
+  member vni 50000 associate-vrf
+  member vni 51000 mcast-group 239.1.1.10
+  member vni 52000 mcast-group 239.1.1.20
+  member vni 60000 associate-vrf
+
+interface Ethernet1/1
+  no switchport
+  mtu 4000
+  ip address 192.168.13.2/30
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet1/2
+  no switchport
+  mtu 4000
+  ip address 192.168.23.2/30
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet1/3
+  switchport access vlan 10
+
+interface Ethernet1/4
+  switchport access vlan 20
+
+interface Ethernet1/5
+  switchport access vlan 30
+
+interface Ethernet1/6
+  switchport access vlan 40
+
+interface Ethernet1/7
+  switchport access vlan 300
+
+interface loopback0
+  ip address 3.3.3.3/32
+  ip pim sparse-mode
+cli alias name status show system resources
+cli alias name wr copy run start
+
+boot nxos bootflash:/nxos.7.0.3.I7.9.bin
+router bgp 65101
+  router-id 3.3.3.3
+  address-family ipv4 unicast
+    network 3.3.3.3/32
+    network 192.168.13.0/30
+    network 192.168.23.0/30
+  neighbor 192.168.13.1
+    remote-as 65101
+    address-family ipv4 unicast
+      allowas-in 3
+      send-community
+      send-community extended
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community
+      send-community extended
+      route-map LOOPBACK out
+  neighbor 192.168.23.1
+    remote-as 65101
+    address-family ipv4 unicast
+      allowas-in 3
+      send-community
+      send-community extended
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community
+      send-community extended
+      route-map LOOPBACK out
+  vrf LABX
+    address-family ipv4 unicast
+      advertise l2vpn evpn
+      redistribute direct route-map LAB
+      maximum-paths 2
+  vrf LABY
+    address-family ipv4 unicast
+      advertise l2vpn evpn
+      redistribute direct route-map LAB
+      maximum-paths 2
+evpn
+  vni 51000 l2
+    rd auto
+    route-target import auto
+    route-target export auto
+  vni 52000 l2
+    rd auto
+    route-target import auto
+    route-target export auto
+
+
