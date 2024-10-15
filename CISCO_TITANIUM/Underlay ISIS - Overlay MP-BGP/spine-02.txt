@@ -1,0 +1,47 @@
+
+license grace-period
+
+hostname SPINE-02
+
+feature pim
+feature isis
+feature fabric multicast
+
+
+ip pim rp-address 5.5.5.5 group-list 224.0.0.0/4
+ip pim ssm range none
+
+
+interface Ethernet2/1
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef2
+  ip address 192.168.23.1/30
+  ip router isis LAB
+  ip pim sparse-mode
+  no shutdown
+
+interface Ethernet2/2
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef2
+  ip address 192.168.24.1/30
+  ip router isis LAB
+  ip pim sparse-mode
+  no shutdown
+
+interface loopback0
+  ip address 2.2.2.2/32
+  ip router isis LAB
+  ip pim sparse-mode
+
+interface loopback5
+  ip address 5.5.5.5/32
+  ip router isis LAB
+  ip pim sparse-mode
+cli alias name wr copy run start
+cli alias name status show system resources
+
+router isis LAB
+  net 49.0001.aabb.ccdd.eef2.00
+  is-type level-1
