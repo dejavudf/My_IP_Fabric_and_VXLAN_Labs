@@ -1,0 +1,54 @@
+
+!
+hostname SPINE-02
+!
+ip multicast-routing
+!
+interface Loopback0
+ ip address 2.2.2.2 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Loopback5
+ ip address 5.5.5.5 255.255.255.255
+ ip pim sparse-mode
+ ip ospf 1 area 0
+!
+interface GigabitEthernet0/2
+ media-type rj45
+ negotiation auto
+!
+interface GigabitEthernet0/0
+ no switchport
+ mtu 4000
+ ip address 192.168.23.1 255.255.255.252
+ ip pim sparse-mode
+ ip ospf 1 area 0
+ duplex full
+ no negotiation auto
+!
+interface GigabitEthernet0/1
+ no switchport
+ mtu 4000
+ ip address 192.168.24.1 255.255.255.252
+ ip pim sparse-mode
+ ip ospf 1 area 0
+ duplex full
+ no negotiation auto
+!
+router ospf 1
+ router-id 2.2.2.2
+ maximum-paths 1
+!
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+ip pim rp-address 5.5.5.5 5
+ip pim ssm range none
+!
+ip access-list standard none
+!
+access-list 1 permit any
+access-list 2 permit 232.0.0.0 0.255.255.255
+access-list 5 permit any
+!
