@@ -1,0 +1,35 @@
+
+license grace-period
+
+hostname SPINE-02
+
+
+feature isis
+feature fabric multicast
+
+
+interface Ethernet2/1
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef2
+  ip address 192.168.23.1/30
+  ip router isis LAB
+  no shutdown
+
+interface Ethernet2/2
+  no switchport
+  mtu 4000
+  mac-address aabb.ccdd.eef2
+  ip address 192.168.24.1/30
+  ip router isis LAB
+  no shutdown
+
+interface loopback0
+  ip address 2.2.2.2/32
+  ip router isis LAB
+cli alias name status show system resources
+cli alias name wr copy run start
+
+router isis LAB
+  net 49.0001.aabb.ccdd.eef2.00
+  is-type level-1
