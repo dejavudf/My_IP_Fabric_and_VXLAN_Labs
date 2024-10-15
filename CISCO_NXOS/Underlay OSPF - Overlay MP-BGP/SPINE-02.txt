@@ -1,0 +1,32 @@
+
+!
+hostname SPINE-02
+!
+interface Loopback0
+ ip address 2.2.2.2 255.255.255.255
+ ip ospf 1 area 0
+!
+interface GigabitEthernet0/2
+ shutdown
+ media-type rj45
+ negotiation auto
+!
+interface GigabitEthernet0/0
+ no switchport
+ mtu 4000
+ ip address 192.168.23.1 255.255.255.252
+ ip ospf 1 area 0
+ negotiation auto
+!
+interface GigabitEthernet0/1
+ no switchport
+ mtu 4000
+ ip address 192.168.24.1 255.255.255.252
+ ip ospf 1 area 0
+ negotiation auto
+!
+router ospf 1
+ router-id 2.2.2.2
+!
+ip forward-protocol nd
+!
